@@ -40,6 +40,12 @@ export function renderTokenDisplay(elements, state) {
   elements.tokenDisplay.replaceChildren();
 
   const committedTokens = state.latestResponse?.tokens || textToDisplayTokens(state.currentText);
+  const currentStep = state.history[state.currentHistoryIndex];
+  const addedTokenStartIndex = findAddedTokenStartIndex(
+    committedTokens,
+    currentStep?.addedText || "",
+  );
+
   if (committedTokens.length === 0 && !state.pendingAddition) {
     const placeholder = document.createElement("span");
     placeholder.className = "placeholder";
@@ -52,7 +58,7 @@ export function renderTokenDisplay(elements, state) {
     const tokenElement = document.createElement("span");
     tokenElement.className = "token";
     tokenElement.textContent = tokenItem.token;
-    if (index === committedTokens.length - 1) {
+    if (index >= addedTokenStartIndex) {
       tokenElement.classList.add("token-added");
     }
     elements.tokenDisplay.append(tokenElement);
@@ -110,4 +116,27 @@ function textToDisplayTokens(text) {
     token_id: index + 1,
     token,
   }));
+}
+
+function findAddedTokenStartIndex(tokens, addedText) {
+  if (!addedText || tokens.length === 0) {
+    return tokens.length;
+  }
+
+  const trimmedAddedText = addedText.trim();
+  for (let index = tokens.length - 1; index >= 0; index -= 1) {
+    const suffixTokens = tokens.slice(index).map((tokenItem) => tokenItem.token);
+
+    // 実際のTokenizerは空白を含むトークンを返すことがあります。
+    // Dummy tokenizerは空白区切りの入力を単語トークンとして返すため、
+    // 連結一致と空白区切り一致の両方で追加範囲を判定します。
+    if (
+      suffixTokens.join("") === addedText ||
+      suffixTokens.join(" ") === trimmedAddedText
+    ) {
+      return index;
+    }
+  }
+
+  return tokens.length - 1;
 }
