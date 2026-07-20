@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LLM Demo</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script type="module" src="/static/js/main.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="LLMデモ操作画面">
+        <div class="text-panel">
+          <div id="token-display" class="token-display" aria-live="polite"></div>
+        </div>
+
+        <div class="controls-row">
+          <label class="field">
+            <span>TopK</span>
+            <input id="top-k-input" type="number" min="1" max="256" value="10">
+          </label>
+          <label class="field field-wide">
+            <span>追加する文字列</span>
+            <input id="addition-input" type="text" autocomplete="off">
+          </label>
+          <button id="predict-button" class="primary-button" type="button">
+            次のトークンの予測開始
+          </button>
+        </div>
+
+        <section class="table-section" aria-label="TopKテーブル">
+          <div class="section-header">
+            <h1 id="table-title">Top-10</h1>
+            <span id="status-message" role="status"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>順位</th>
+                  <th>トークン</th>
+                  <th>確率</th>
+                </tr>
+              </thead>
+              <tbody id="candidate-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="method-section" aria-label="追加方法">
+          <h2>追加方法</h2>
+          <div class="method-grid">
+            <button id="greedy-button" type="button">Greedy</button>
+            <button id="weight-button" type="button">Weight</button>
+            <div class="random-control">
+              <button id="random-button" type="button">Random</button>
+              <input id="random-start-input" type="number" min="1" value="1" aria-label="Random開始順位">
+              <input id="random-end-input" type="number" min="1" value="3" aria-label="Random終了順位">
+            </div>
+            <button id="input-mode-button" type="button">Input</button>
+          </div>
+        </section>
+
+        <nav class="history-nav" aria-label="履歴移動">
+          <button id="previous-button" type="button">← 前</button>
+          <span id="history-position">0 / 0</span>
+          <button id="next-button" type="button">次 →</button>
+        </nav>
+      </section>
+    </main>
+  </body>
+</html>

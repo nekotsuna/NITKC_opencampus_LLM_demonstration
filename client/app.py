@@ -2,8 +2,10 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from client.routers.api import router as api_router
+from client.routers.pages import router as page_router
 
 app = FastAPI(title="LLM Demo Web App")
 
@@ -20,4 +22,6 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+app.mount("/static", StaticFiles(directory="client/static"), name="static")
 app.include_router(api_router)
+app.include_router(page_router)
