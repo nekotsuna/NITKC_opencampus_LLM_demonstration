@@ -1,23 +1,147 @@
-"""Placeholder for the future Hugging Face Llama inference provider."""
+"""Hugging Face Llama inference provider.
 
-from server.model import GenerateRequest, GenerateResponse
-from server.providers.base import BaseInferenceProvider
+This provider follows the flow in docs/llama_sample.py:
+
+1. Load a causal language model and tokenizer.
+2. Tokenize the full input text on every request.
+3. Run the model without gradients.
+4. Convert the final-token logits to probabilities.
+5. Return the top-k next-token candidates.
+"""
+
+from typing import Any
+
+from server.model import (
+    GenerateRequest,
+    GenerateResponse,
+    ProbabilityItem,
+    TokenItem,
+)
+from server.providers.base import (
+    BaseInferenceProvider,
+    InferenceProviderError,
+    ModelNotLoadedError,
+)
 
 
 class LlamaInferenceProvider(BaseInferenceProvider):
-    """Provider shape for a real causal language model implementation."""
+    """Inference provider for Hugging Face causal language models."""
+
+    def __init__(
+        self,
+        model_path: str = "../kadaikenkyu/Meta-Llama-3.1-8B-Instruct",
+        max_input_tokens: int = 1024,
+    ) -> None:
+        self.model_path = model_path
+        self.max_input_tokens = max_input_tokens
+        self.is_loaded = False
+        self.model: Any | None = None
+        self.tokenizer: Any | None = None
+        self.torch: Any | None = None
+        self.device = "cpu"
 
     async def load_model(self) -> None:
-        """Load tokenizer and model weights.
+        """Load tokenizer and model weights once when the server starts."""
 
-        This project currently uses DummyInferenceProvider.  Keeping this class
-        separate makes the future torch/transformers implementation a provider
-        change instead of an API rewrite.
-        """
+        try:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+        except ImportError as error:
+            raise InferenceProviderError(
+                "torch または transformers がインストールされていません。"
+            ) from error
 
-        raise NotImplementedError("Real Llama provider is not implemented yet.")
+        self.torch = torch
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+            self.model = AutoModelForCausalLM.from_pretrained(self.model_path)
+            self.model.to(self.device)
+            self.model.eval()
+        except Exception as error:
+            raise InferenceProviderError(
+                f"モデルのロードに失敗しました: {self.model_path}"
+            ) from error
+
+        self.is_loaded = True
 
     async def generate(self, request_body: GenerateRequest) -> GenerateResponse:
-        """Generate top-k candidates with the real model."""
+        """Generate top-k next-token candidates with the loaded Llama model."""
 
-        raise NotImplementedError("Real Llama provider is not implemented yet.")
+        if not self.is_loaded or self.model is None or self.tokenizer is None:
+            raise ModelNotLoadedError("Llama model is not loaded.")
+
+        if self.torch is None:
+            raise InferenceProviderError("torch is not available.")
+
+        try:
+            encoded_inputs = self.tokenizer(
+                request_body.text,
+                return_tensors="pt",
+            )
+            input_ids = encoded_inputs["input_ids"][0]
+        except Exception as error:
+            raise InferenceProviderError("入力テキストのトークン化に失敗しました。") from error
+
+        if input_ids.shape[0] > self.max_input_tokens:
+            raise ValueError(
+                f"入力トークン数は{self.max_input_tokens}以下にしてください。"
+            )
+
+        encoded_inputs = {
+            key: value.to(self.device)
+            for key, value in encoded_inputs.items()
+        }
+
+        try:
+            with self.torch.no_grad():
+                outputs = self.model(**encoded_inputs)
+                logits = outputs.logits[0, -1]
+                probabilities = self.torch.softmax(logits, dim=-1)
+                top_k_result = self.torch.topk(
+                    probabilities,
+                    request_body.top_k,
+                )
+        except Exception as error:
+            raise InferenceProviderError("モデル推論に失敗しました。") from error
+
+        input_tokens = self._build_input_tokens(input_ids)
+        probability_table = self._build_probability_table(top_k_result)
+
+        return GenerateResponse(tokens=input_tokens, table=probability_table)
+
+    def _build_input_tokens(self, input_ids: Any) -> list[TokenItem]:
+        """Convert tokenizer input IDs into API response token items."""
+
+        token_items: list[TokenItem] = []
+        for token_id_tensor in input_ids:
+            token_id = int(token_id_tensor.item())
+            token_text = self.tokenizer.decode([token_id])
+            token_items.append(
+                TokenItem(
+                    token_id=token_id,
+                    token=token_text,
+                )
+            )
+
+        return token_items
+
+    def _build_probability_table(self, top_k_result: Any) -> list[ProbabilityItem]:
+        """Convert torch.topk output into ranked probability rows."""
+
+        probability_items: list[ProbabilityItem] = []
+        for index, token_id_tensor in enumerate(top_k_result.indices):
+            token_id = int(token_id_tensor.item())
+            token_text = self.tokenizer.decode([token_id])
+            probability = float(top_k_result.values[index].item())
+            probability_items.append(
+                ProbabilityItem(
+                    token_id=token_id,
+                    rank=index + 1,
+                    token=token_text,
+                    probability=probability,
+                )
+            )
+
+        return probability_items
