@@ -54,6 +54,26 @@ Dummy ServerからReal Serverへ切り替える場合は、Webアプリ起動時
 LLM_DEMO_INFERENCE_SERVER_URL=http://127.0.0.1:9000 uvicorn client.app:app --host 127.0.0.1 --port 8000
 ```
 
+推論サーバ側は `.env` の `LLM_DEMO_SERVER_APP_ENV` で provider を自動選択します。
+
+```bash
+cp .env.example .env
+```
+
+テスト環境では `server/providers/dummy.py` を使います。
+
+```env
+LLM_DEMO_SERVER_APP_ENV=test
+```
+
+本番環境では `server/providers/llama.py` を使います。
+
+```env
+LLM_DEMO_SERVER_APP_ENV=production
+LLM_DEMO_SERVER_LLAMA_MODEL_PATH=../kadaikenkyu/Meta-Llama-3.1-8B-Instruct
+LLM_DEMO_SERVER_MAX_INPUT_TOKENS=1024
+```
+
 ## API
 
 推論サーバとWebアプリのプロキシAPIは同じリクエスト・レスポンス形式です。
