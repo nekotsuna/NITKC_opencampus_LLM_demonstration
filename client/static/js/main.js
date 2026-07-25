@@ -145,14 +145,23 @@ elements.randomButton.addEventListener("click", () => {
   updateSelectedMethodAddition();
 });
 
-elements.weightTopPercentInput.addEventListener("change", () => {
+function handleWeightTopPercentChange() {
   elements.weightTopPercentInput.value = readWeightTopPercent();
   if (state.selectedMethod !== "weight") {
     return;
   }
 
   updateSelectedMethodAddition();
-});
+}
+
+elements.weightTopPercentInput.addEventListener(
+  "input",
+  handleWeightTopPercentChange,
+);
+elements.weightTopPercentInput.addEventListener(
+  "change",
+  handleWeightTopPercentChange,
+);
 
 elements.randomStartInput.addEventListener("change", () => {
   if (state.selectedMethod !== "random") {

@@ -41,10 +41,7 @@ function filterTopCumulativeProbability(table, topPercent) {
   }
 
   const normalizedPercent = Math.min(100, Math.max(1, topPercent));
-  const totalProbability = table.reduce((sum, row) => {
-    return sum + row.probability;
-  }, 0);
-  const probabilityLimit = totalProbability * (normalizedPercent / 100);
+  const probabilityLimit = normalizedPercent / 100;
   const candidates = [];
   let cumulativeProbability = 0;
 
