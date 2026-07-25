@@ -2,6 +2,7 @@ export function createInitialState() {
   return {
     currentText: "",
     pendingAddition: "",
+    selectedMethod: "input",
     latestResponse: null,
     history: [],
     currentHistoryIndex: -1,

@@ -12,6 +12,7 @@ export function getElements() {
     randomButton: document.querySelector("#random-button"),
     randomStartInput: document.querySelector("#random-start-input"),
     randomEndInput: document.querySelector("#random-end-input"),
+    selectButton: document.querySelector("#select-button"),
     inputModeButton: document.querySelector("#input-mode-button"),
     previousButton: document.querySelector("#previous-button"),
     nextButton: document.querySelector("#next-button"),
@@ -31,6 +32,7 @@ export function renderApp(elements, state) {
   renderTokenDisplay(elements, state);
   renderCandidateTable(elements, state.latestResponse?.table || []);
   renderHistoryPosition(elements, state);
+  renderSelectedMethod(elements, state.selectedMethod);
   elements.tableTitle.textContent = `Top-${readTopK(elements)}`;
   elements.additionInput.value = state.pendingAddition;
   elements.predictButton.disabled = state.isLoading;
@@ -104,6 +106,22 @@ export function renderHistoryPosition(elements, state) {
 
 export function setStatus(elements, message) {
   elements.statusMessage.textContent = message;
+}
+
+function renderSelectedMethod(elements, selectedMethod) {
+  const methodButtons = {
+    greedy: elements.greedyButton,
+    weight: elements.weightButton,
+    random: elements.randomButton,
+    select: elements.selectButton,
+    input: elements.inputModeButton,
+  };
+
+  Object.entries(methodButtons).forEach(([method, button]) => {
+    const isSelected = method === selectedMethod;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
 }
 
 function textToDisplayTokens(text) {

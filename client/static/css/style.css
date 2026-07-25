@@ -39,6 +39,13 @@ button:hover {
   border-color: var(--accent);
 }
 
+button.is-selected {
+  border-color: var(--accent);
+  background: #e6f6f7;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
@@ -192,7 +199,7 @@ tr.selectable-row:hover {
 
 .method-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
   gap: 10px;
 }
 

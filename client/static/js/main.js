@@ -24,9 +24,34 @@ function setPendingAddition(value) {
   renderApp(elements, state);
 }
 
+function selectMethod(method) {
+  state.selectedMethod = method;
+}
+
+function chooseAdditionForSelectedMethod(table) {
+  if (state.selectedMethod === "greedy") {
+    return chooseGreedyToken(table);
+  }
+
+  if (state.selectedMethod === "weight") {
+    return chooseWeightedToken(table);
+  }
+
+  if (state.selectedMethod === "random") {
+    const startRank = Number.parseInt(elements.randomStartInput.value, 10);
+    const endRank = Number.parseInt(elements.randomEndInput.value, 10);
+    return chooseRandomToken(table, startRank, endRank);
+  }
+
+  // Selectはユーザーがテーブルから選ぶ方式、Inputはユーザーが直接入力する方式なので、
+  // 新しい候補を取得した直後は追加予定文字列を空にします。
+  return "";
+}
+
 async function handlePredict() {
   const topK = readTopK(elements);
   const nextText = `${state.currentText}${state.pendingAddition}`;
+  const addedText = state.pendingAddition;
 
   if (!nextText) {
     window.alert("追加する文字列を入力してください。");
@@ -43,11 +68,11 @@ async function handlePredict() {
       inputText: nextText,
       tokens: response.tokens,
       table: response.table,
-      addedText: state.pendingAddition,
+      addedText,
     });
     state.currentText = nextText;
-    state.pendingAddition = "";
     state.latestResponse = response;
+    state.pendingAddition = chooseAdditionForSelectedMethod(response.table);
     setStatus(elements, "完了");
   } catch (error) {
     window.alert(error.message);
@@ -63,6 +88,7 @@ function getLatestTable() {
 }
 
 elements.additionInput.addEventListener("input", (event) => {
+  selectMethod("input");
   state.pendingAddition = event.target.value;
   renderApp(elements, state);
 });
@@ -77,20 +103,30 @@ elements.predictButton.addEventListener("click", () => {
 });
 
 elements.greedyButton.addEventListener("click", () => {
+  selectMethod("greedy");
   setPendingAddition(chooseGreedyToken(getLatestTable()));
 });
 
 elements.weightButton.addEventListener("click", () => {
+  selectMethod("weight");
   setPendingAddition(chooseWeightedToken(getLatestTable()));
 });
 
 elements.randomButton.addEventListener("click", () => {
+  selectMethod("random");
   const startRank = Number.parseInt(elements.randomStartInput.value, 10);
   const endRank = Number.parseInt(elements.randomEndInput.value, 10);
   setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));
 });
 
+elements.selectButton.addEventListener("click", () => {
+  selectMethod("select");
+  setPendingAddition("");
+});
+
 elements.inputModeButton.addEventListener("click", () => {
+  selectMethod("input");
+  renderApp(elements, state);
   elements.additionInput.focus();
 });
 
@@ -99,6 +135,7 @@ elements.tableBody.addEventListener("click", (event) => {
   if (!row) {
     return;
   }
+  selectMethod("select");
   setPendingAddition(row.dataset.token);
 });
 
