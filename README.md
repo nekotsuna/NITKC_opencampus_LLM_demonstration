@@ -25,8 +25,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+テスト環境では`requirements.txt`、本番環境では`requirements-server.txt`と`requirements-client.txt`を用いる。
+
 ## 起動方法
 
+### テスト環境
 ターミナルを2つ開き、先にDummy Inference Serverを起動します。
 
 ```bash
@@ -45,9 +48,34 @@ uvicorn client.app:app --host 127.0.0.1 --port 8000
 http://127.0.0.1:8000
 ```
 
+### 本番環境
+推論サーバでInference Serverを起動する。
+
+```bash
+uvicorn server.app:app --host 127.0.0.1 --port 8001
+```
+
+クライアントからsshトンネルを張る。
+```bash
+ssh -L 8001:localhost:8001 {inference_sever}
+```
+
+Webアプリケーションを起動する。
+```bash
+uvicorn client.app:app --host 127.0.0.1 --port 8000
+```
+
+ブラウザで以下を開きます。
+
+```text
+http://127.0.0.1:8000
+```
+
+
 ## 推論サーバの切り替え
 
 Webアプリケーションは `LLM_DEMO_INFERENCE_SERVER_URL` を参照して推論サーバに接続します。
+sshトンネルを使用する場合は環境変数を変えずに、sshのポートフォワーディング機能を使ってください。
 Dummy ServerからReal Serverへ切り替える場合は、Webアプリ起動時にURLだけ変更します。
 
 ```bash
