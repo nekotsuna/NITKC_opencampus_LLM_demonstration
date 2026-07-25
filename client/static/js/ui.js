@@ -10,6 +10,7 @@ export function getElements() {
     greedyButton: document.querySelector("#greedy-button"),
     weightButton: document.querySelector("#weight-button"),
     randomButton: document.querySelector("#random-button"),
+    methodProperties: document.querySelector("#method-properties"),
     randomControl: document.querySelector("#random-control"),
     randomStartInput: document.querySelector("#random-start-input"),
     randomEndInput: document.querySelector("#random-end-input"),
@@ -125,12 +126,8 @@ function renderSelectedMethod(elements, selectedMethod) {
   });
 
   const isRandomSelected = selectedMethod === "random";
-  elements.randomControl.classList.toggle(
-    "is-random-selected",
-    isRandomSelected,
-  );
-  elements.randomStartInput.hidden = !isRandomSelected;
-  elements.randomEndInput.hidden = !isRandomSelected;
+  elements.methodProperties.hidden = !isRandomSelected;
+  elements.randomControl.hidden = !isRandomSelected;
 }
 
 function textToDisplayTokens(text) {

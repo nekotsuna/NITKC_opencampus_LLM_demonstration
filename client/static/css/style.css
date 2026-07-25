@@ -197,20 +197,30 @@ tr.selectable-row:hover {
   gap: 12px;
 }
 
+.method-section h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .method-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(110px, 1fr));
   gap: 10px;
 }
 
-.random-control {
+.method-properties {
   display: grid;
-  grid-template-columns: minmax(90px, 1fr);
-  gap: 8px;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
-.random-control.is-random-selected {
-  grid-template-columns: minmax(90px, 1fr) 72px 72px;
+.random-control {
+  display: grid;
+  grid-template-columns: repeat(2, 120px);
+  gap: 10px;
 }
 
 .history-nav {
@@ -232,6 +242,7 @@ tr.selectable-row:hover {
 
   .controls-row,
   .method-grid,
+  .random-control,
   .history-nav {
     grid-template-columns: 1fr;
   }
