@@ -217,7 +217,7 @@ tr.selectable-row:hover {
   border-top: 1px solid var(--line);
 }
 
-.random-control {
+.property-grid {
   display: grid;
   grid-template-columns: repeat(2, 120px);
   gap: 10px;
@@ -242,7 +242,7 @@ tr.selectable-row:hover {
 
   .controls-row,
   .method-grid,
-  .random-control,
+  .property-grid,
   .history-nav {
     grid-template-columns: 1fr;
   }

@@ -18,6 +18,7 @@ import {
 
 const elements = getElements();
 const state = createInitialState();
+const METHODS_WITH_USER_INPUT = new Set(["input", "select"]);
 
 function setPendingAddition(value) {
   state.pendingAddition = value;
@@ -34,24 +35,44 @@ function focusAdditionInputForInputMode() {
   }
 }
 
+function readWeightTopPercent() {
+  const parsedValue = Number.parseInt(elements.weightTopPercentInput.value, 10);
+  if (Number.isNaN(parsedValue)) {
+    return 100;
+  }
+  return Math.min(100, Math.max(1, parsedValue));
+}
+
+function readRandomRankRange() {
+  return {
+    startRank: Number.parseInt(elements.randomStartInput.value, 10),
+    endRank: Number.parseInt(elements.randomEndInput.value, 10),
+  };
+}
+
 function chooseAdditionForSelectedMethod(table) {
-  if (state.selectedMethod === "greedy") {
-    return chooseGreedyToken(table);
-  }
+  const chooser = METHOD_CHOOSERS[state.selectedMethod];
+  return chooser ? chooser(table) : "";
+}
 
-  if (state.selectedMethod === "weight") {
-    return chooseWeightedToken(table);
-  }
-
-  if (state.selectedMethod === "random") {
-    const startRank = Number.parseInt(elements.randomStartInput.value, 10);
-    const endRank = Number.parseInt(elements.randomEndInput.value, 10);
+const METHOD_CHOOSERS = {
+  greedy: (table) => chooseGreedyToken(table),
+  weight: (table) => chooseWeightedToken(table, readWeightTopPercent()),
+  random: (table) => {
+    const { startRank, endRank } = readRandomRankRange();
     return chooseRandomToken(table, startRank, endRank);
+  },
+  select: () => "",
+  input: () => "",
+};
+
+function updateSelectedMethodAddition() {
+  if (METHODS_WITH_USER_INPUT.has(state.selectedMethod)) {
+    renderApp(elements, state);
+    return;
   }
 
-  // Selectはユーザーがテーブルから選ぶ方式、Inputはユーザーが直接入力する方式なので、
-  // 新しい候補を取得した直後は追加予定文字列を空にします。
-  return "";
+  setPendingAddition(chooseAdditionForSelectedMethod(getLatestTable()));
 }
 
 async function handlePredict() {
@@ -116,14 +137,21 @@ elements.greedyButton.addEventListener("click", () => {
 
 elements.weightButton.addEventListener("click", () => {
   selectMethod("weight");
-  setPendingAddition(chooseWeightedToken(getLatestTable()));
+  updateSelectedMethodAddition();
 });
 
 elements.randomButton.addEventListener("click", () => {
   selectMethod("random");
-  const startRank = Number.parseInt(elements.randomStartInput.value, 10);
-  const endRank = Number.parseInt(elements.randomEndInput.value, 10);
-  setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));
+  updateSelectedMethodAddition();
+});
+
+elements.weightTopPercentInput.addEventListener("change", () => {
+  elements.weightTopPercentInput.value = readWeightTopPercent();
+  if (state.selectedMethod !== "weight") {
+    return;
+  }
+
+  updateSelectedMethodAddition();
 });
 
 elements.randomStartInput.addEventListener("change", () => {
@@ -131,9 +159,7 @@ elements.randomStartInput.addEventListener("change", () => {
     return;
   }
 
-  const startRank = Number.parseInt(elements.randomStartInput.value, 10);
-  const endRank = Number.parseInt(elements.randomEndInput.value, 10);
-  setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));
+  updateSelectedMethodAddition();
 });
 
 elements.randomEndInput.addEventListener("change", () => {
@@ -141,9 +167,7 @@ elements.randomEndInput.addEventListener("change", () => {
     return;
   }
 
-  const startRank = Number.parseInt(elements.randomStartInput.value, 10);
-  const endRank = Number.parseInt(elements.randomEndInput.value, 10);
-  setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));
+  updateSelectedMethodAddition();
 });
 
 elements.selectButton.addEventListener("click", () => {

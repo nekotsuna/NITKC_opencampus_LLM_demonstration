@@ -9,9 +9,10 @@ export function getElements() {
     tableBody: document.querySelector("#candidate-table-body"),
     greedyButton: document.querySelector("#greedy-button"),
     weightButton: document.querySelector("#weight-button"),
+    weightTopPercentInput: document.querySelector("#weight-top-percent-input"),
     randomButton: document.querySelector("#random-button"),
     methodProperties: document.querySelector("#method-properties"),
-    randomControl: document.querySelector("#random-control"),
+    methodPropertyPanels: document.querySelectorAll("[data-property-panel]"),
     randomStartInput: document.querySelector("#random-start-input"),
     randomEndInput: document.querySelector("#random-end-input"),
     selectButton: document.querySelector("#select-button"),
@@ -125,9 +126,13 @@ function renderSelectedMethod(elements, selectedMethod) {
     button.setAttribute("aria-pressed", String(isSelected));
   });
 
-  const isRandomSelected = selectedMethod === "random";
-  elements.methodProperties.hidden = !isRandomSelected;
-  elements.randomControl.hidden = !isRandomSelected;
+  let hasVisiblePanel = false;
+  elements.methodPropertyPanels.forEach((panel) => {
+    const isSelectedPanel = panel.dataset.propertyPanel === selectedMethod;
+    panel.hidden = !isSelectedPanel;
+    hasVisiblePanel = hasVisiblePanel || isSelectedPanel;
+  });
+  elements.methodProperties.hidden = !hasVisiblePanel;
 }
 
 function textToDisplayTokens(text) {

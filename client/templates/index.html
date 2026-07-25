@@ -58,14 +58,39 @@
           </div>
           <div id="method-properties" class="method-properties" hidden>
             <h3>プロパティ</h3>
-            <div id="random-control" class="random-control">
+            <div id="weight-properties" class="property-grid" data-property-panel="weight" hidden>
+              <label class="field">
+                <span>上位%</span>
+                <input
+                  id="weight-top-percent-input"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value="100"
+                  aria-label="Weight上位パーセント"
+                >
+              </label>
+            </div>
+            <div id="random-properties" class="property-grid" data-property-panel="random" hidden>
               <label class="field">
                 <span>start</span>
-                <input id="random-start-input" type="number" min="1" value="1" aria-label="Random開始順位">
+                <input
+                  id="random-start-input"
+                  type="number"
+                  min="1"
+                  value="1"
+                  aria-label="Random開始順位"
+                >
               </label>
               <label class="field">
                 <span>end</span>
-                <input id="random-end-input" type="number" min="1" value="3" aria-label="Random終了順位">
+                <input
+                  id="random-end-input"
+                  type="number"
+                  min="1"
+                  value="3"
+                  aria-label="Random終了順位"
+                >
               </label>
             </div>
           </div>

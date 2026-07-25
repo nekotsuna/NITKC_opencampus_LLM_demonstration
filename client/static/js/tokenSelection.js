@@ -2,21 +2,22 @@ export function chooseGreedyToken(table) {
   return table.length > 0 ? table[0].token : "";
 }
 
-export function chooseWeightedToken(table) {
-  const totalWeight = table.reduce((sum, row) => sum + row.probability, 0);
+export function chooseWeightedToken(table, topPercent = 100) {
+  const candidates = filterTopPercent(table, topPercent);
+  const totalWeight = candidates.reduce((sum, row) => sum + row.probability, 0);
   if (totalWeight <= 0) {
-    return chooseGreedyToken(table);
+    return chooseGreedyToken(candidates);
   }
 
   let threshold = Math.random() * totalWeight;
-  for (const row of table) {
+  for (const row of candidates) {
     threshold -= row.probability;
     if (threshold <= 0) {
       return row.token;
     }
   }
 
-  return table[table.length - 1]?.token || "";
+  return candidates[candidates.length - 1]?.token || "";
 }
 
 export function chooseRandomToken(table, startRank, endRank) {
@@ -32,4 +33,17 @@ export function chooseRandomToken(table, startRank, endRank) {
 
   const index = Math.floor(Math.random() * candidates.length);
   return candidates[index].token;
+}
+
+function filterTopPercent(table, topPercent) {
+  if (table.length === 0) {
+    return [];
+  }
+
+  const normalizedPercent = Math.min(100, Math.max(1, topPercent));
+  const candidateCount = Math.max(
+    1,
+    Math.ceil(table.length * (normalizedPercent / 100)),
+  );
+  return table.slice(0, candidateCount);
 }
