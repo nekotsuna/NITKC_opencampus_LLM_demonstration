@@ -28,6 +28,12 @@ function selectMethod(method) {
   state.selectedMethod = method;
 }
 
+function focusAdditionInputForInputMode() {
+  if (state.selectedMethod === "input") {
+    elements.additionInput.focus();
+  }
+}
+
 function chooseAdditionForSelectedMethod(table) {
   if (state.selectedMethod === "greedy") {
     return chooseGreedyToken(table);
@@ -80,6 +86,7 @@ async function handlePredict() {
   } finally {
     state.isLoading = false;
     renderApp(elements, state);
+    focusAdditionInputForInputMode();
   }
 }
 
@@ -114,6 +121,26 @@ elements.weightButton.addEventListener("click", () => {
 
 elements.randomButton.addEventListener("click", () => {
   selectMethod("random");
+  const startRank = Number.parseInt(elements.randomStartInput.value, 10);
+  const endRank = Number.parseInt(elements.randomEndInput.value, 10);
+  setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));
+});
+
+elements.randomStartInput.addEventListener("change", () => {
+  if (state.selectedMethod !== "random") {
+    return;
+  }
+
+  const startRank = Number.parseInt(elements.randomStartInput.value, 10);
+  const endRank = Number.parseInt(elements.randomEndInput.value, 10);
+  setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));
+});
+
+elements.randomEndInput.addEventListener("change", () => {
+  if (state.selectedMethod !== "random") {
+    return;
+  }
+
   const startRank = Number.parseInt(elements.randomStartInput.value, 10);
   const endRank = Number.parseInt(elements.randomEndInput.value, 10);
   setPendingAddition(chooseRandomToken(getLatestTable(), startRank, endRank));

@@ -10,6 +10,7 @@ export function getElements() {
     greedyButton: document.querySelector("#greedy-button"),
     weightButton: document.querySelector("#weight-button"),
     randomButton: document.querySelector("#random-button"),
+    randomControl: document.querySelector("#random-control"),
     randomStartInput: document.querySelector("#random-start-input"),
     randomEndInput: document.querySelector("#random-end-input"),
     selectButton: document.querySelector("#select-button"),
@@ -122,6 +123,14 @@ function renderSelectedMethod(elements, selectedMethod) {
     button.classList.toggle("is-selected", isSelected);
     button.setAttribute("aria-pressed", String(isSelected));
   });
+
+  const isRandomSelected = selectedMethod === "random";
+  elements.randomControl.classList.toggle(
+    "is-random-selected",
+    isRandomSelected,
+  );
+  elements.randomStartInput.hidden = !isRandomSelected;
+  elements.randomEndInput.hidden = !isRandomSelected;
 }
 
 function textToDisplayTokens(text) {

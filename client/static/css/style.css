@@ -205,8 +205,12 @@ tr.selectable-row:hover {
 
 .random-control {
   display: grid;
-  grid-template-columns: minmax(90px, 1fr) 72px 72px;
+  grid-template-columns: minmax(90px, 1fr);
   gap: 8px;
+}
+
+.random-control.is-random-selected {
+  grid-template-columns: minmax(90px, 1fr) 72px 72px;
 }
 
 .history-nav {
