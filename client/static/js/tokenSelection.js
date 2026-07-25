@@ -3,7 +3,7 @@ export function chooseGreedyToken(table) {
 }
 
 export function chooseWeightedToken(table, topPercent = 100) {
-  const candidates = filterTopPercent(table, topPercent);
+  const candidates = filterTopCumulativeProbability(table, topPercent);
   const totalWeight = candidates.reduce((sum, row) => sum + row.probability, 0);
   if (totalWeight <= 0) {
     return chooseGreedyToken(candidates);
@@ -35,15 +35,26 @@ export function chooseRandomToken(table, startRank, endRank) {
   return candidates[index].token;
 }
 
-function filterTopPercent(table, topPercent) {
+function filterTopCumulativeProbability(table, topPercent) {
   if (table.length === 0) {
     return [];
   }
 
   const normalizedPercent = Math.min(100, Math.max(1, topPercent));
-  const candidateCount = Math.max(
-    1,
-    Math.ceil(table.length * (normalizedPercent / 100)),
-  );
-  return table.slice(0, candidateCount);
+  const totalProbability = table.reduce((sum, row) => {
+    return sum + row.probability;
+  }, 0);
+  const probabilityLimit = totalProbability * (normalizedPercent / 100);
+  const candidates = [];
+  let cumulativeProbability = 0;
+
+  for (const row of table) {
+    candidates.push(row);
+    cumulativeProbability += row.probability;
+    if (cumulativeProbability >= probabilityLimit) {
+      break;
+    }
+  }
+
+  return candidates;
 }
