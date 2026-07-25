@@ -217,6 +217,11 @@ tr.selectable-row:hover {
   border-top: 1px solid var(--line);
 }
 
+.method-properties[hidden],
+.property-grid[hidden] {
+  display: none;
+}
+
 .property-grid {
   display: grid;
   grid-template-columns: repeat(2, 120px);
