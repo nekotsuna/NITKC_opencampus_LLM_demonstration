@@ -19,6 +19,7 @@ import {
 const elements = getElements();
 const state = createInitialState();
 const METHODS_WITH_USER_INPUT = new Set(["input", "select"]);
+const BEGIN_OF_TEXT_TOKEN = "<|begin_of_text|>";
 
 function setPendingAdditionFromToken(tokenItem) {
   if (!tokenItem) {
@@ -143,7 +144,20 @@ async function resolvePendingAdditionTokens() {
   }
 
   const response = await tokenizeText(state.pendingAddition);
-  return response.tokens;
+  return dropDuplicatedBeginOfTextToken(response.tokens);
+}
+
+function dropDuplicatedBeginOfTextToken(tokens) {
+  if (state.currentTokens.length === 0 || tokens.length === 0) {
+    return tokens;
+  }
+
+  const [firstToken, ...remainingTokens] = tokens;
+  if (firstToken.token === BEGIN_OF_TEXT_TOKEN) {
+    return remainingTokens;
+  }
+
+  return tokens;
 }
 
 function setNextPendingAddition(table) {
