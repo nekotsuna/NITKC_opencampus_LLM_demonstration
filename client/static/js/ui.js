@@ -44,11 +44,11 @@ export function renderApp(elements, state) {
 export function renderTokenDisplay(elements, state) {
   elements.tokenDisplay.replaceChildren();
 
-  const committedTokens = state.latestResponse?.tokens || textToDisplayTokens(state.currentText);
+  const committedTokens = state.currentTokens;
   const currentStep = state.history[state.currentHistoryIndex];
-  const addedTokenStartIndex = findAddedTokenStartIndex(
+  const addedTokenStartIndex = findAddedTokenStartIndexFromStep(
     committedTokens,
-    currentStep?.addedText || "",
+    currentStep,
   );
 
   if (committedTokens.length === 0 && !state.pendingAddition) {
@@ -83,6 +83,7 @@ export function renderCandidateTable(elements, table) {
   table.forEach((row) => {
     const tr = document.createElement("tr");
     tr.className = "selectable-row";
+    tr.dataset.tokenId = row.token_id;
     tr.dataset.token = row.token;
 
     const rankCell = document.createElement("td");
@@ -135,20 +136,17 @@ function renderSelectedMethod(elements, selectedMethod) {
   elements.methodProperties.hidden = !hasVisiblePanel;
 }
 
-function textToDisplayTokens(text) {
-  if (!text) {
-    return [];
+function findAddedTokenStartIndexFromStep(tokens, step) {
+  if (!step || tokens.length === 0) {
+    return tokens.length;
   }
 
-  const pieces = text.trim().includes(" ") ? text.trim().split(/\s+/) : Array.from(text);
-  return pieces.map((token, index) => ({
-    token_id: index + 1,
-    token,
-  }));
-}
+  if (step.addedTokens?.length > 0) {
+    return Math.max(0, tokens.length - step.addedTokens.length);
+  }
 
-function findAddedTokenStartIndex(tokens, addedText) {
-  if (!addedText || tokens.length === 0) {
+  const addedText = step.addedText || "";
+  if (!addedText) {
     return tokens.length;
   }
 

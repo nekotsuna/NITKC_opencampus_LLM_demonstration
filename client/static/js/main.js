@@ -1,4 +1,4 @@
-import { generateCandidates } from "./api.js";
+import { generateCandidates, tokenizeText } from "./api.js";
 import {
   addHistoryStep,
   createInitialState,
@@ -20,8 +20,27 @@ const elements = getElements();
 const state = createInitialState();
 const METHODS_WITH_USER_INPUT = new Set(["input", "select"]);
 
-function setPendingAddition(value) {
+function setPendingAdditionFromToken(tokenItem) {
+  if (!tokenItem) {
+    state.pendingAddition = "";
+    state.pendingAdditionTokens = [];
+    renderApp(elements, state);
+    return;
+  }
+
+  state.pendingAddition = tokenItem.token;
+  state.pendingAdditionTokens = [
+    {
+      token_id: tokenItem.token_id,
+      token: tokenItem.token,
+    },
+  ];
+  renderApp(elements, state);
+}
+
+function setPendingAdditionFromText(value) {
   state.pendingAddition = value;
+  state.pendingAdditionTokens = null;
   renderApp(elements, state);
 }
 
@@ -72,34 +91,37 @@ function updateSelectedMethodAddition() {
     return;
   }
 
-  setPendingAddition(chooseAdditionForSelectedMethod(getLatestTable()));
+  setPendingAdditionFromToken(chooseAdditionForSelectedMethod(getLatestTable()));
 }
 
 async function handlePredict() {
   const topK = readTopK(elements);
-  const nextText = `${state.currentText}${state.pendingAddition}`;
   const addedText = state.pendingAddition;
-
-  if (!nextText) {
-    window.alert("追加する文字列を入力してください。");
-    return;
-  }
 
   state.isLoading = true;
   setStatus(elements, "推論中");
   renderApp(elements, state);
 
   try {
-    const response = await generateCandidates(nextText, topK);
+    const addedTokens = await resolvePendingAdditionTokens();
+    const nextTokens = [...state.currentTokens, ...addedTokens];
+    if (nextTokens.length === 0) {
+      window.alert("追加する文字列を入力してください。");
+      return;
+    }
+
+    const response = await generateCandidates(nextTokens, topK);
     addHistoryStep(state, {
-      inputText: nextText,
+      decodedText: response.decoded_text,
       tokens: response.tokens,
       table: response.table,
+      addedTokens,
       addedText,
     });
-    state.currentText = nextText;
+    state.currentText = response.decoded_text;
+    state.currentTokens = response.tokens;
     state.latestResponse = response;
-    state.pendingAddition = chooseAdditionForSelectedMethod(response.table);
+    setNextPendingAddition(response.table);
     setStatus(elements, "完了");
   } catch (error) {
     window.alert(error.message);
@@ -111,14 +133,45 @@ async function handlePredict() {
   }
 }
 
+async function resolvePendingAdditionTokens() {
+  if (state.pendingAdditionTokens !== null) {
+    return state.pendingAdditionTokens;
+  }
+
+  if (!state.pendingAddition) {
+    return [];
+  }
+
+  const response = await tokenizeText(state.pendingAddition);
+  return response.tokens;
+}
+
+function setNextPendingAddition(table) {
+  const tokenItem = chooseAdditionForSelectedMethod(table);
+  if (tokenItem) {
+    state.pendingAddition = tokenItem.token;
+    state.pendingAdditionTokens = [
+      {
+        token_id: tokenItem.token_id,
+        token: tokenItem.token,
+      },
+    ];
+    return;
+  }
+
+  state.pendingAddition = "";
+  state.pendingAdditionTokens = METHODS_WITH_USER_INPUT.has(state.selectedMethod)
+    ? null
+    : [];
+}
+
 function getLatestTable() {
   return state.latestResponse?.table || [];
 }
 
 elements.additionInput.addEventListener("input", (event) => {
   selectMethod("input");
-  state.pendingAddition = event.target.value;
-  renderApp(elements, state);
+  setPendingAdditionFromText(event.target.value);
 });
 
 elements.topKInput.addEventListener("change", () => {
@@ -132,7 +185,7 @@ elements.predictButton.addEventListener("click", () => {
 
 elements.greedyButton.addEventListener("click", () => {
   selectMethod("greedy");
-  setPendingAddition(chooseGreedyToken(getLatestTable()));
+  setPendingAdditionFromToken(chooseGreedyToken(getLatestTable()));
 });
 
 elements.weightButton.addEventListener("click", () => {
@@ -181,12 +234,12 @@ elements.randomEndInput.addEventListener("change", () => {
 
 elements.selectButton.addEventListener("click", () => {
   selectMethod("select");
-  setPendingAddition("");
+  setPendingAdditionFromToken(null);
 });
 
 elements.inputModeButton.addEventListener("click", () => {
   selectMethod("input");
-  renderApp(elements, state);
+  setPendingAdditionFromText(state.pendingAddition);
   elements.additionInput.focus();
 });
 
@@ -196,7 +249,10 @@ elements.tableBody.addEventListener("click", (event) => {
     return;
   }
   selectMethod("select");
-  setPendingAddition(row.dataset.token);
+  setPendingAdditionFromToken({
+    token_id: Number.parseInt(row.dataset.tokenId, 10),
+    token: row.dataset.token,
+  });
 });
 
 elements.previousButton.addEventListener("click", () => {

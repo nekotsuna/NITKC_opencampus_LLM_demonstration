@@ -1,7 +1,9 @@
 export function createInitialState() {
   return {
     currentText: "",
+    currentTokens: [],
     pendingAddition: "",
+    pendingAdditionTokens: null,
     selectedMethod: "input",
     latestResponse: null,
     history: [],
@@ -30,8 +32,10 @@ export function moveHistory(state, nextIndex) {
   }
 
   state.currentHistoryIndex = nextIndex;
-  state.currentText = step.inputText;
+  state.currentText = step.decodedText;
+  state.currentTokens = step.tokens;
   state.pendingAddition = "";
+  state.pendingAdditionTokens = null;
   state.latestResponse = {
     tokens: step.tokens,
     table: step.table,

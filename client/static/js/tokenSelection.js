@@ -1,5 +1,5 @@
 export function chooseGreedyToken(table) {
-  return table.length > 0 ? table[0].token : "";
+  return table.length > 0 ? table[0] : null;
 }
 
 export function chooseWeightedToken(table, topPercent = 100) {
@@ -13,11 +13,11 @@ export function chooseWeightedToken(table, topPercent = 100) {
   for (const row of candidates) {
     threshold -= row.probability;
     if (threshold <= 0) {
-      return row.token;
+      return row;
     }
   }
 
-  return candidates[candidates.length - 1]?.token || "";
+  return candidates[candidates.length - 1] || null;
 }
 
 export function chooseRandomToken(table, startRank, endRank) {
@@ -28,11 +28,11 @@ export function chooseRandomToken(table, startRank, endRank) {
   });
 
   if (candidates.length === 0) {
-    return "";
+    return null;
   }
 
   const index = Math.floor(Math.random() * candidates.length);
-  return candidates[index].token;
+  return candidates[index];
 }
 
 function filterTopCumulativeProbability(table, topPercent) {
