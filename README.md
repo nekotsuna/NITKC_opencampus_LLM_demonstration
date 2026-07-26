@@ -107,18 +107,41 @@ LLM_DEMO_SERVER_MAX_INPUT_TOKENS=1024
 推論サーバとWebアプリのプロキシAPIは同じリクエスト・レスポンス形式です。
 
 ```http
+POST /tokenize
+```
+
+```json
+{
+  "text": "東京"
+}
+```
+
+```json
+{
+  "tokens": [
+    {"token_id": 1, "token": "東"},
+    {"token_id": 2, "token": "京"}
+  ]
+}
+```
+
+```http
 POST /generate
 ```
 
 ```json
 {
-  "text": "東京",
+  "tokens": [
+    {"token_id": 1, "token": "東"},
+    {"token_id": 2, "token": "京"}
+  ],
   "top_k": 10
 }
 ```
 
 ```json
 {
+  "decoded_text": "東京",
   "tokens": [
     {"token_id": 1, "token": "東"},
     {"token_id": 2, "token": "京"}
