@@ -6,7 +6,10 @@ from client.services.inference import (
     GenerateRequest,
     GenerateResponse,
     InferenceServiceError,
+    TokenizeRequest,
+    TokenizeResponse,
     generate_next_token_candidates,
+    tokenize_text,
 )
 
 router = APIRouter(prefix="/api", tags=["web-api"])
@@ -18,6 +21,19 @@ async def generate(request_body: GenerateRequest) -> GenerateResponse:
 
     try:
         return await generate_next_token_candidates(request_body)
+    except InferenceServiceError as error:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(error),
+        ) from error
+
+
+@router.post("/tokenize", response_model=TokenizeResponse)
+async def tokenize(request_body: TokenizeRequest) -> TokenizeResponse:
+    """Return tokenized text from the configured inference server."""
+
+    try:
+        return await tokenize_text(request_body)
     except InferenceServiceError as error:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

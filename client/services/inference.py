@@ -11,7 +11,10 @@ from client.config import settings
 class GenerateRequest(BaseModel):
     """Request body accepted by both the web app and inference server."""
 
-    text: str = Field(..., description="Text sent to the language model.")
+    tokens: List["TokenItem"] = Field(
+        ...,
+        description="Token sequence sent to the language model.",
+    )
     top_k: int = Field(
         ...,
         ge=1,
@@ -39,8 +42,21 @@ class ProbabilityItem(BaseModel):
 class GenerateResponse(BaseModel):
     """Response body returned by both the web app and inference server."""
 
+    decoded_text: str
     tokens: List[TokenItem]
     table: List[ProbabilityItem]
+
+
+class TokenizeRequest(BaseModel):
+    """Request body for tokenizing arbitrary text."""
+
+    text: str = Field(..., description="Text to tokenize.")
+
+
+class TokenizeResponse(BaseModel):
+    """Response body returned by the tokenize API."""
+
+    tokens: List[TokenItem]
 
 
 class InferenceServiceError(Exception):
@@ -58,16 +74,46 @@ async def generate_next_token_candidates(
     server interchangeable.
     """
 
-    generate_url = f"{settings.inference_server_url.rstrip('/')}/generate"
+    response_json = await _post_to_inference_server(
+        path="/generate",
+        body=request_body.model_dump(),
+    )
+
+    try:
+        return GenerateResponse.model_validate(response_json)
+    except ValueError as error:
+        raise InferenceServiceError(
+            "推論サーバから不正なgenerateレスポンスが返されました。"
+        ) from error
+
+
+async def tokenize_text(request_body: TokenizeRequest) -> TokenizeResponse:
+    """Forward a tokenize request to the configured inference server."""
+
+    response_json = await _post_to_inference_server(
+        path="/tokenize",
+        body=request_body.model_dump(),
+    )
+
+    try:
+        return TokenizeResponse.model_validate(response_json)
+    except ValueError as error:
+        raise InferenceServiceError(
+            "推論サーバから不正なtokenizeレスポンスが返されました。"
+        ) from error
+
+
+async def _post_to_inference_server(path: str, body: dict) -> dict:
+    """POST JSON to the inference server and return parsed JSON."""
+
+    request_url = f"{settings.inference_server_url.rstrip('/')}{path}"
     timeout = httpx.Timeout(settings.inference_timeout_seconds)
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(
-                generate_url,
-                json=request_body.model_dump(),
-            )
+            response = await client.post(request_url, json=body)
             response.raise_for_status()
+            return response.json()
     except httpx.TimeoutException as error:
         raise InferenceServiceError("推論サーバへの接続がタイムアウトしました。") from error
     except httpx.HTTPStatusError as error:
@@ -79,10 +125,7 @@ async def generate_next_token_candidates(
         raise InferenceServiceError(
             "推論サーバに接続できません。SSHトンネルまたはURL設定を確認してください。"
         ) from error
-
-    try:
-        return GenerateResponse.model_validate(response.json())
     except ValueError as error:
         raise InferenceServiceError(
-            "推論サーバから不正なJSONレスポンスが返されました。"
+            "推論サーバからJSONではないレスポンスが返されました。"
         ) from error
