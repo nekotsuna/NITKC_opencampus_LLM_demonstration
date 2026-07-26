@@ -1,5 +1,6 @@
 export function getElements() {
   return {
+    decodedTextOutput: document.querySelector("#decoded-text-output"),
     tokenDisplay: document.querySelector("#token-display"),
     topKInput: document.querySelector("#top-k-input"),
     additionInput: document.querySelector("#addition-input"),
@@ -32,6 +33,7 @@ export function readTopK(elements) {
 }
 
 export function renderApp(elements, state) {
+  renderDecodedText(elements, state);
   renderTokenDisplay(elements, state);
   renderCandidateTable(elements, state.latestResponse?.table || []);
   renderHistoryPosition(elements, state);
@@ -39,6 +41,10 @@ export function renderApp(elements, state) {
   elements.tableTitle.textContent = `Top-${readTopK(elements)}`;
   elements.additionInput.value = state.pendingAddition;
   elements.predictButton.disabled = state.isLoading;
+}
+
+function renderDecodedText(elements, state) {
+  elements.decodedTextOutput.value = state.currentText;
 }
 
 export function renderTokenDisplay(elements, state) {

@@ -10,6 +10,13 @@
   <body>
     <main class="app-shell">
       <section class="workspace" aria-label="LLMデモ操作画面">
+        <div class="decoded-text-panel">
+          <label class="field">
+            <span>decoded_text</span>
+            <textarea id="decoded-text-output" readonly rows="3"></textarea>
+          </label>
+        </div>
+
         <div class="text-panel">
           <div id="token-display" class="token-display" aria-live="polite"></div>
         </div>

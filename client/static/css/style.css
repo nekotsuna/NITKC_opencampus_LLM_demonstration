@@ -63,12 +63,30 @@ button:disabled {
   gap: 16px;
 }
 
+.decoded-text-panel,
 .text-panel,
 .table-section,
 .method-section {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.decoded-text-panel {
+  padding: 16px;
+}
+
+.decoded-text-panel textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 88px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fbfcfd;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.5;
 }
 
 .token-display {
