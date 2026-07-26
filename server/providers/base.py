@@ -2,7 +2,12 @@
 
 from abc import ABC, abstractmethod
 
-from server.model import GenerateRequest, GenerateResponse
+from server.model import (
+    GenerateRequest,
+    GenerateResponse,
+    TokenizeRequest,
+    TokenizeResponse,
+)
 
 
 class InferenceProviderError(Exception):
@@ -30,3 +35,7 @@ class BaseInferenceProvider(ABC):
     @abstractmethod
     async def generate(self, request_body: GenerateRequest) -> GenerateResponse:
         """Return tokenized input and next-token candidates."""
+
+    @abstractmethod
+    async def tokenize(self, request_body: TokenizeRequest) -> TokenizeResponse:
+        """Convert text into tokens."""

@@ -6,9 +6,12 @@ from pydantic import BaseModel, Field
 
 
 class GenerateRequest(BaseModel):
-    """Input text and candidate count for next-token prediction."""
+    """Input tokens and candidate count for next-token prediction."""
 
-    text: str = Field(..., description="Text to tokenize and send to the model.")
+    tokens: List["TokenItem"] = Field(
+        ...,
+        description="Token sequence to send to the model.",
+    )
     top_k: int = Field(
         ...,
         ge=1,
@@ -36,5 +39,18 @@ class ProbabilityItem(BaseModel):
 class GenerateResponse(BaseModel):
     """Tokenized input text and top-k next-token candidates."""
 
+    decoded_text: str
     tokens: List[TokenItem]
     table: List[ProbabilityItem]
+
+
+class TokenizeRequest(BaseModel):
+    """Text to convert into model tokens."""
+
+    text: str = Field(..., description="Text to tokenize.")
+
+
+class TokenizeResponse(BaseModel):
+    """Tokenized text."""
+
+    tokens: List[TokenItem]

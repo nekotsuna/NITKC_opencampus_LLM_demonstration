@@ -4,6 +4,8 @@ from server.model import (
     GenerateRequest,
     GenerateResponse,
     ProbabilityItem,
+    TokenizeRequest,
+    TokenizeResponse,
     TokenItem,
 )
 from server.providers.base import BaseInferenceProvider, ModelNotLoadedError
@@ -50,12 +52,12 @@ class DummyInferenceProvider(BaseInferenceProvider):
         self.is_loaded = True
 
     async def generate(self, request_body: GenerateRequest) -> GenerateResponse:
-        """Return fixed candidates for the requested input text."""
+        """Return fixed candidates for the requested input tokens."""
 
         if not self.is_loaded:
             raise ModelNotLoadedError("Dummy model is not loaded.")
 
-        tokens = self._tokenize_for_demo(request_body.text)
+        tokens = request_body.tokens
         if len(tokens) > 1024:
             raise ValueError("入力トークン数は1024以下にしてください。")
 
@@ -68,7 +70,19 @@ class DummyInferenceProvider(BaseInferenceProvider):
             )
             for index in range(request_body.top_k)
         ]
-        return GenerateResponse(tokens=tokens, table=table)
+        return GenerateResponse(
+            decoded_text=self._decode_for_demo(tokens),
+            tokens=tokens,
+            table=table,
+        )
+
+    async def tokenize(self, request_body: TokenizeRequest) -> TokenizeResponse:
+        """Convert text into deterministic demo tokens."""
+
+        if not self.is_loaded:
+            raise ModelNotLoadedError("Dummy model is not loaded.")
+
+        return TokenizeResponse(tokens=self._tokenize_for_demo(request_body.text))
 
     def _tokenize_for_demo(self, text: str) -> list[TokenItem]:
         """Split text into display tokens without pretending to be an LLM tokenizer."""
@@ -98,3 +112,8 @@ class DummyInferenceProvider(BaseInferenceProvider):
         if index < len(self._candidate_probabilities):
             return self._candidate_probabilities[index]
         return max(0.001, 0.01 / (index + 1))
+
+    def _decode_for_demo(self, tokens: list[TokenItem]) -> str:
+        """Join demo tokens into display text."""
+
+        return "".join(token.token for token in tokens)

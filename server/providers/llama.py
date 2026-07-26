@@ -15,6 +15,8 @@ from server.model import (
     GenerateRequest,
     GenerateResponse,
     ProbabilityItem,
+    TokenizeRequest,
+    TokenizeResponse,
     TokenItem,
 )
 from server.providers.base import (
@@ -76,27 +78,26 @@ class LlamaInferenceProvider(BaseInferenceProvider):
             raise InferenceProviderError("torch is not available.")
 
         try:
-            encoded_inputs = self.tokenizer(
-                request_body.text,
-                return_tensors="pt",
+            input_token_ids = [
+                token_item.token_id
+                for token_item in request_body.tokens
+            ]
+            input_ids = self.torch.tensor(
+                [input_token_ids],
+                dtype=self.torch.long,
+                device=self.device,
             )
-            input_ids = encoded_inputs["input_ids"][0]
         except Exception as error:
-            raise InferenceProviderError("入力テキストのトークン化に失敗しました。") from error
+            raise InferenceProviderError("入力トークン列の変換に失敗しました。") from error
 
-        if input_ids.shape[0] > self.max_input_tokens:
+        if input_ids.shape[1] > self.max_input_tokens:
             raise ValueError(
                 f"入力トークン数は{self.max_input_tokens}以下にしてください。"
             )
 
-        encoded_inputs = {
-            key: value.to(self.device)
-            for key, value in encoded_inputs.items()
-        }
-
         try:
             with self.torch.no_grad():
-                outputs = self.model(**encoded_inputs)
+                outputs = self.model(input_ids=input_ids)
                 logits = outputs.logits[0, -1]
                 probabilities = self.torch.softmax(logits, dim=-1)
                 top_k_result = self.torch.topk(
@@ -106,10 +107,30 @@ class LlamaInferenceProvider(BaseInferenceProvider):
         except Exception as error:
             raise InferenceProviderError("モデル推論に失敗しました。") from error
 
-        input_tokens = self._build_input_tokens(input_ids)
         probability_table = self._build_probability_table(top_k_result)
 
-        return GenerateResponse(tokens=input_tokens, table=probability_table)
+        return GenerateResponse(
+            decoded_text=self.tokenizer.decode(input_token_ids),
+            tokens=request_body.tokens,
+            table=probability_table,
+        )
+
+    async def tokenize(self, request_body: TokenizeRequest) -> TokenizeResponse:
+        """Convert text into Llama tokenizer tokens."""
+
+        if not self.is_loaded or self.tokenizer is None:
+            raise ModelNotLoadedError("Llama model is not loaded.")
+
+        try:
+            encoded_inputs = self.tokenizer(
+                request_body.text,
+                return_tensors="pt",
+            )
+            input_ids = encoded_inputs["input_ids"][0]
+        except Exception as error:
+            raise InferenceProviderError("入力テキストのトークン化に失敗しました。") from error
+
+        return TokenizeResponse(tokens=self._build_input_tokens(input_ids))
 
     def _build_input_tokens(self, input_ids: Any) -> list[TokenItem]:
         """Convert tokenizer input IDs into API response token items."""

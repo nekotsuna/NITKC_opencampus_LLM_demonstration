@@ -56,19 +56,38 @@ statelessにするため、サーバは候補だけを返し、次にどのト�
 ## post /generate
 ### request
 {
- "text": string,
+ "tokens": [
+  {"token_id": number, "token": string}
+ ]
  "top_k": number,
 }
-text: モデルに入力する文字列
+tokens: モデルに入力するトークン列
 top_k: 何番目のトークンまでをレスポンスで返すか
 
 ### response
 {
+ "decoded_text": string
  "tokens": [
   {"token_id": number, "token": string}
  ]
  "table": [
   {"token_id": number, "rank": number, "token": string, "probability": float}
+ ]
+}
+
+decoded_text: 入力したトークン列全てを連結してデコードした文字列
+
+## post /tokenize
+### request
+{
+ "text": string,
+}
+text: トークン化する文字列
+
+### response
+{
+ "tokens": [
+  {"token_id": number, "token": string}
  ]
 }
 
